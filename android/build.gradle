@@ -34,6 +34,8 @@ if (useManagedAndroidSdkVersions) {
 android {
 	namespace "expo.modules.uhfuartreader"
 	defaultConfig {
+		minSdkVersion 21
+		targetSdkVersion 21
 		versionCode 1
 		versionName "0.0.1"
 		ndk { abiFilters "armeabi", "armeabi-v7a" }
