@@ -26,7 +26,8 @@ if (useManagedAndroidSdkVersions) {
 		compileSdkVersion safeExtGet("compileSdkVersion", 34)
 		defaultConfig {
 			minSdkVersion safeExtGet("minSdkVersion", 21)
-			targetSdkVersion safeExtGet("targetSdkVersion", 34)
+			targetSdkVersion safeExtGet("targetSdkVersion", 21)
+			ndk { abiFilters "armeabi", "armeabi-v7a" }
 		}
 	}
 }
