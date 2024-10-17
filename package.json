@@ -1,6 +1,6 @@
 {
 	"name": "uhf-uart-reader",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"description": "UHF RFID reader module through UART interface designed for `rk3128_box` device.",
 	"main": "build/index.js",
 	"types": "build/index.d.ts",
