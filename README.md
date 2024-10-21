@@ -22,45 +22,45 @@ or
 yarn add uhf-uart-reader
 ```
 
-You will need to update your expo project to start going with a prebuilt `android` directory.
+This module contains an Expo Config Plugin that will automatically add the changes to gradle
+configuration files when the module is installed. If you are not using Expo, you will need to
+manually add the changes to the gradle configuration files.
 
-Running this command will generate the `android` directory:
+### Expo Config Plugin
 
-```bash
-pnpm expo prebuild --platform android
+Add `uhf-uart-reader` to the `plugins` in `app.json` or `app.config.ts`:
+
+```json
+{
+	"expo": {
+		"plugins": ["uhf-uart-reader"]
+	}
+}
 ```
 
-This is required because we want to modify the `build.gradle` file in this new directory to set
-the following:
+### Manual Installation
+
+### android/build.gradle
+
+Update the minSdkVersion and targetSdkVersion to 21:
+
+### android/app/build.gradle
+
+Add the following:
 
 ```gradle
+...
 android {
   ...
   defaultConfig {
     ...
-    minSdkVersion = Integer.parseInt(findProperty('android.minSdkVersion') ?: '21')
-        compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '34')
-        targetSdkVersion = Integer.parseInt(findProperty('android.targetSdkVersion') ?: '21')
+    ndk {
+      abiFilters "armeabi-v7a", "armeabi"
+    }
   }
 }
+...
 ```
-
-All this is needed because Expo SDK 50+ doesn't allow us to set the `minSdkVersion` and
-`targetSdkVersion` below 31, so we need to set it manually in the `build.gradle` file.
-
-We also need to add abiFilters in defaultConfig to support armeabi-v7a and arm64-v8a:
-
-```gradle
-android {
-  ...
-  defaultConfig {
-    ...
-    ndk { abiFilters "armeabi", "armeabi-v7a" }
-  }
-}
-```
-
-Once this is done, builds will work as expected.
 
 ## Usage
 
