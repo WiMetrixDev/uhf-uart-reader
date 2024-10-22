@@ -44,14 +44,6 @@ const withNdkAbiFilters = (
 					);
 				}
 
-				// Update minSdkVersion and targetSdkVersion to 21
-				updatedDefaultConfig = updatedDefaultConfig
-					.replace(/minSdkVersion\s+[\w\.]+/, `minSdkVersion ${minSdkVersion}`)
-					.replace(
-						/targetSdkVersion\s+[\w\.]+/,
-						`targetSdkVersion ${targetSdkVersion}`
-					);
-
 				config.modResults.contents = config.modResults.contents.replace(
 					defaultConfigMatch,
 					updatedDefaultConfig
