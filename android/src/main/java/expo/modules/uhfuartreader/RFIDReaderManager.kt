@@ -1,57 +1,137 @@
 package expo.modules.uhfuartreader
 
 import android.util.Log
-import com.UHF.scanlable.UhfData
-import java.io.File
-import java.util.Timer
-import java.util.TimerTask
+import java.io.FileDescriptor
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.IOException
 
 class RFIDReaderManager {
     var uhfUartReaderModule: UhfUartReaderModule? = null
 
-    private val scanInterval: Long = 100
-    private val addr: Byte = 0xff.toByte()
-    private val maxPower = 33
-    private var scanFlag = false
-    private var timer: Timer? = null
-    private var isCanceled = false
-    private val serialPorts = mutableListOf<String>()
+    private var mFileInputStream: FileInputStream? = null
+    private var mFileOutputStream: FileOutputStream? = null
+    private var mFd: FileDescriptor? = null
+    private var isScanning = false
+    private val cmd = byteArrayOf(0x09, 0x00, 0x01, 0x04, 0x00, 0x00, 0x80.toByte(), 0x0A, 0x22, 0xDA.toByte())
+    private val powercmd = ByteArray(6)
+    private var thread: Thread? = null
+    private val maxPower = 30
 
+    // Used to load the 'native-lib' library on application startup.
     companion object {
         private const val TAG = "UhfUartReader"
+
+        const val PRESET_VALUE = 0xFFFF
+        const val POLYNOMIAL = 0x8408
+
+        init {
+            System.loadLibrary("native-lib")
+        }
     }
 
     fun connectReader(
         module: UhfUartReaderModule,
         serialPort: String,
-        baudRate: Int,
     ): Boolean {
         Log.i(
             TAG,
-            "Connecting to Scanner with Serial Port: $serialPort and Baud Rate: $baudRate",
+            "Connecting to Scanner with Serial Port: $serialPort",
         )
         uhfUartReaderModule = module
+        if (isScanning) return true
 
-        try {
-            val result = UhfData.UhfGetData.OpenUhf(baudRate, addr, serialPort, 0, null)
-
-            if (result == 0) {
-                Log.i(TAG, "Connected to Scanner Successfully!")
-                uhfUartReaderModule?.isConnected = true
-
-                startScanningHandler()
-            } else {
-                Log.e(TAG, "Failed To Connect Scanner!")
-                Log.e(TAG, "Error Code: $result")
-                uhfUartReaderModule?.isConnected = false
+        if (mFd == null) {
+            mFd = openPath(serialPort)
+            if (mFd == null) {
+                Log.e(TAG, "native open returns null")
+                return false
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error Connecting to Scanner!")
-            e.printStackTrace()
-            uhfUartReaderModule?.isConnected = false
+            if (mFd != null) {
+                mFileInputStream = FileInputStream(mFd)
+                mFileOutputStream = FileOutputStream(mFd)
+            }
         }
 
-        return uhfUartReaderModule?.isConnected ?: false
+        isScanning = true
+        thread =
+            Thread {
+                Log.d(TAG, "Scanning Thread Started")
+                while (mFd != null) {
+                    send()
+                    if (mFileInputStream != null) {
+                        val receivedData = ByteArray(64)
+                        try {
+                            val readInputValue = mFileInputStream!!.read(receivedData)
+                            receivedData[readInputValue] = 0
+                            val packetLength = receivedData[0] + 1
+                            if (readInputValue > 0 && packetLength > 10) {
+                                val epcLength = receivedData[6]
+                                Log.d(TAG, "Received Data: ${receivedData.joinToString()}")
+                                val crc = calculateCrc16(receivedData, packetLength.toByte())
+                                Log.d(TAG, "CRC: $crc")
+                                // if (crc == 0) {
+                                val epc = StringBuilder()
+                                for (i in 0 until epcLength) {
+                                    epc.append(String.format("%02X", receivedData[i + 7]))
+                                }
+                                Log.d(TAG, "EPC: $epc")
+                                Log.d(TAG, "isScanning: $isScanning")
+                                if (isScanning) {
+                                    uhfUartReaderModule?.sendEvent(
+                                        "onRead",
+                                        mapOf(
+                                            "epc" to epc.toString(),
+                                        ),
+                                    )
+                                }
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                    try {
+                        Thread.sleep(200)
+                    } catch (e: InterruptedException) {
+                        e.printStackTrace()
+                    }
+                }
+            }
+        thread!!.start()
+
+        return true
+    }
+
+    private fun send() {
+        Log.d(TAG, "Sending Command")
+        if (mFileOutputStream != null) {
+            try {
+                mFileOutputStream!!.write(cmd)
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    private fun calculateCrc16(
+        data: ByteArray,
+        length: Byte,
+    ): Int {
+        var crcValue: Short = PRESET_VALUE.toShort()
+
+        for (i in 0 until length.toInt()) {
+            crcValue = (crcValue.toInt() xor data[i.toInt()].toInt().and(0xFF)).toShort()
+
+            for (j in 0 until 8) {
+                crcValue =
+                    if (crcValue.toInt() and 0x0001 != 0) {
+                        (crcValue.toInt() shr 1 xor POLYNOMIAL).toShort()
+                    } else {
+                        (crcValue.toInt() shr 1).toShort()
+                    }
+            }
+        }
+        return crcValue.toInt() and 0xFFFF
     }
 
     fun setPower(power: Int) {
@@ -61,65 +141,34 @@ class RFIDReaderManager {
         }
         val power = (power * maxPower / 100).toByte()
 
-        UhfData.UhfGetData.setPower(power)
-    }
-
-    fun startScanningHandler() {
-        if (timer == null) {
-            UhfData.Set_sound(true)
-            UhfData.SoundFlag = false
-            UhfData.scanResult6c = null
-            isCanceled = false
-            timer = Timer()
-            timer?.schedule(
-                object : TimerTask() {
-                    override fun run() {
-                        if (scanFlag) return
-
-                        scanFlag = true
-                        UhfData.read6c()
-                        if (UhfData.scanResult6c == null || UhfData.scanResult6c == "") {
-                            scanFlag = false
-                            return
-                        }
-
-                        val epc = UhfData.scanResult6c
-                        uhfUartReaderModule?.sendEvent(
-                            "onRead",
-                            mapOf(
-                                "epc" to epc,
-                            ),
-                        )
-                        scanFlag = false
-                    }
-                },
-                0,
-                scanInterval,
-            )
-        } else {
-            cancelScan()
-            UhfData.Set_sound(false)
-        }
-    }
-
-    fun cancelScan() {
-        isCanceled = true
-        if (timer != null) {
-            timer?.cancel()
-            timer = null
-        }
-        UhfData.scanResult6c = null
-    }
-
-    fun disconnectReader() =
         try {
-            UhfData.UhfGetData.CloseUhf()
-            uhfUartReaderModule?.isConnected = false
-            Log.i(TAG, "Disconnected from Scanner Successfully!")
-            true
+            powercmd[0] = 0x05
+            powercmd[1] = 0x00
+            powercmd[2] = 0x2F
+            powercmd[3] = power
+            val crc = calculateCrc16(powercmd, 4.toByte())
+            powercmd[4] = (crc and 0xFF).toByte()
+            powercmd[5] = ((crc shr 8) and 0xFF).toByte()
+            mFileOutputStream?.write(powercmd)
+            Log.i(TAG, "Reader Power set to $power")
         } catch (e: Exception) {
-            Log.e(TAG, "Error Disconnecting from Scanner!")
             e.printStackTrace()
-            false
+            Log.e(TAG, "Failed to set Reader Power to $power")
         }
+    }
+
+    fun disconnectReader() {
+        if (isScanning) {
+            isScanning = false
+            close()
+            mFileInputStream = null
+            mFileOutputStream = null
+            mFd = null
+            thread!!.interrupt()
+        }
+    }
+
+    private external fun openPath(path: String): FileDescriptor
+
+    private external fun close()
 }

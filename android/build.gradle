@@ -22,27 +22,33 @@ if (useManagedAndroidSdkVersions) {
 			rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
 		}
 	}
-	project.android {
-		compileSdkVersion safeExtGet("compileSdkVersion", 34)
-		defaultConfig {
-			minSdkVersion safeExtGet("minSdkVersion", 21)
-			targetSdkVersion safeExtGet("targetSdkVersion", 21)
-			ndk { abiFilters "armeabi", "armeabi-v7a" }
-		}
+  project.android {
+    compileSdkVersion safeExtGet("compileSdkVersion", 34)
+    defaultConfig {
+      minSdkVersion safeExtGet("minSdkVersion", 21)
+      targetSdkVersion safeExtGet("targetSdkVersion", 34)
+    }
 	}
 }
 
 android {
 	namespace "expo.modules.uhfuartreader"
 	defaultConfig {
-		minSdkVersion 21
-		targetSdkVersion 21
 		versionCode 1
 		versionName "0.0.1"
-		ndk { abiFilters "armeabi", "armeabi-v7a" }
+		externalNativeBuild {
+			cmake {
+				cppFlags ""
+			}
+		}
 	}
 	lintOptions {
 		abortOnError false
+	}
+	externalNativeBuild {
+		cmake {
+			path "CMakeLists.txt"
+		}
 	}
 }
 

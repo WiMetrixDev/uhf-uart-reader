@@ -47,7 +47,7 @@ class UhfUartReaderModule : Module() {
             Events("onRead")
 
             Function("connect") { serialPort: String, baudRate: Int ->
-                rfid.connectReader(this@UhfUartReaderModule, serialPort, baudRate)
+                rfid.connectReader(this@UhfUartReaderModule, serialPort)
             }
 
             Function("setPower") { power: Int ->
