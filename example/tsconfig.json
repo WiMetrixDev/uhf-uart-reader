@@ -1,0 +1,10 @@
+{
+	"extends": "expo/tsconfig.base",
+	"compilerOptions": {
+		"strict": true,
+		"paths": {
+			"uhf-uart-reader": ["../src/index"],
+			"uhf-uart-reader/*": ["../src/*"]
+		}
+	}
+}
