@@ -9,12 +9,11 @@ export type UhfUartReaderEvents = {
 };
 
 declare class UhfUartReader extends NativeModule<UhfUartReaderEvents> {
-	connect(serialPort: string, baudRate: number): boolean;
+	connect(serialPort: string): boolean;
 	listSerialPorts(): string[];
-	listBaudRates(): number[];
 	setPower(power: number): void;
 	isConnected(): boolean;
-	disconnect(): boolean;
+	disconnect(): void;
 }
 
 // This call loads the native module object from the JSI.

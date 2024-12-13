@@ -14,6 +14,17 @@ class UhfUartReaderModule : Module() {
     var isConnected = false
     val serialPorts = mutableListOf<String>()
 
+    fun connect(serialPort: String): Boolean {
+        val newConnected = rfid.connectReader(this@UhfUartReaderModule, serialPort)
+        isConnected = newConnected
+        return newConnected
+    }
+
+    fun disconnect() {
+        rfid.disconnectReader()
+        isConnected = false
+    }
+
     // Get list of available serial ports on the device
     fun listSerialPorts(): List<String> {
         if (serialPorts.isEmpty()) {
@@ -37,17 +48,14 @@ class UhfUartReaderModule : Module() {
         return serialPorts
     }
 
-    // Pre-defined baud rates
-    fun listBaudRates() = listOf(9600, 19200, 38400, 57600, 115200)
-
     override fun definition() =
         ModuleDefinition {
             Name("UhfUartReader")
 
             Events("onRead")
 
-            Function("connect") { serialPort: String, baudRate: Int ->
-                rfid.connectReader(this@UhfUartReaderModule, serialPort)
+            Function("connect") { serialPort: String ->
+                connect(serialPort)
             }
 
             Function("setPower") { power: Int ->
@@ -62,12 +70,8 @@ class UhfUartReaderModule : Module() {
                 listSerialPorts()
             }
 
-            Function("listBaudRates") {
-                listBaudRates()
-            }
-
             Function("disconnect") {
-                rfid.disconnectReader()
+                disconnect()
             }
         }
 }

@@ -64,25 +64,25 @@ android {
 
 ## Usage
 
-### `connectUhfReader`
+### `connect`
 
 This connects to the UHF reader on the given serial port and specified baud rate, starts reading in
 the background and returns a boolean indicating if the connection was successful.
 
 ```typescript
-import { connectUhfReader } from "uhf-uart-reader";
+import UhfUartReader from "uhf-uart-reader";
 
-const connected = await connectUhfReader("/dev/ttyS0", 115200);
+const connected = UhfUartReader.connect("/dev/ttyS0");
 ```
 
-### `setReaderPower`
+### `setPower`
 
 This sets the power of the UHF reader, the power should be a number between 0 and 100.
 
 ```typescript
-import { setReaderPower } from "uhf-uart-reader";
+import UhfUartReader from "uhf-uart-reader";
 
-setReaderPower(50);
+UhfUartReader.setPower(50);
 ```
 
 ### `addUhfListener`
@@ -92,33 +92,33 @@ setReaderPower(50);
 This adds a listener to the UHF reader, the listener will be called every time a new tag is read.
 
 ```typescript
-import { addUhfListener } from "uhf-uart-reader";
+import UhfUartReader from "uhf-uart-reader";
 
-addUhfListener((tag) => {
+UhfUartReader.addListener("onRead", (tag) => {
 	console.log(`Tag EPC: ${tag.epc}`);
 });
 ```
 
 This returns a function that can be called to remove the listener.
 
-### `disconnectUhfReader`
+### `disconnect`
 
 This disconnects the UHF reader, it should be called when the reader is no longer needed.
 
 ```typescript
-import { disconnectUhfReader } from "uhf-uart-reader";
+import UhfUartReader from "uhf-uart-reader";
 
-disconnectUhfReader();
+UhfUartReader.disconnect();
 ```
 
-### `isUhfReaderConnected`
+### `isConnected`
 
 This returns a boolean indicating if the UHF reader is connected.
 
 ```typescript
-import { isUhfReaderConnected } from "uhf-uart-reader";
+import UhfUartReader from "uhf-uart-reader";
 
-const connected = isUhfReaderConnected();
+const connected = UhfUartReader.isConnected();
 ```
 
 ### `listSerialPorts`
@@ -127,18 +127,7 @@ This returns a list of available serial ports on the device (the options that ca
 `connectUhfReader`).
 
 ```typescript
-import { listSerialPorts } from "uhf-uart-reader";
+import UhfUartReader from "uhf-uart-reader";
 
-const ports = await listSerialPorts();
-```
-
-### `listBaudRates`
-
-This returns a list of available baud rates that can be passed to `connectUhfReader`. The baud
-rates are hardcoded to the following values: `[9600, 19200, 38400, 57600, 115200]`.
-
-```typescript
-import { listBaudRates } from "uhf-uart-reader";
-
-const baudRates = listBaudRates();
+const ports = UhfUartReader.listSerialPorts();
 ```
