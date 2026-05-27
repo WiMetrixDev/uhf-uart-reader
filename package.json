@@ -1,5 +1,5 @@
 {
-	"name": "uhf-uart-reader",
+	"name": "@wimetrix/uhf-uart-reader",
 	"version": "1.0.1",
 	"description": "UHF RFID reader module through UART interface designed for `rk3128_box` device.",
 	"main": "build/index.js",
@@ -24,13 +24,7 @@
 		"UART",
 		"UHF"
 	],
-	"repository": "https://github.com/WiMetrixDev/uhf-uart-reader",
-	"bugs": {
-		"url": "https://github.com/WiMetrixDev/uhf-uart-reader/issues"
-	},
-	"author": "muhammadk1607 <muhammadkhan1607@gmail.com> (https://github.com/muhammadk1607)",
 	"license": "MIT",
-	"homepage": "https://github.com/WiMetrixDev/uhf-uart-reader#readme",
 	"dependencies": {},
 	"devDependencies": {
 		"@types/react": "~18.3.12",
@@ -42,6 +36,10 @@
 		"expo": "*",
 		"react": "*",
 		"react-native": "*"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/WiMetrixDev/uhf-uart-reader"
 	},
 	"packageManager": "yarn@4.5.0"
 }
